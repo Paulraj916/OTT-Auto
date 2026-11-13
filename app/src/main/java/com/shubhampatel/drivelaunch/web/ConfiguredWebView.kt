@@ -58,6 +58,7 @@ fun configureWebView(
         isVerticalScrollBarEnabled = true
 
         WebView.setWebContentsDebuggingEnabled(false)
+        com.shubhampatel.drivelaunch.webaudio.WebAudioHub.install(this)
 
         val originalUserAgent = settings.userAgentString
         setTag(R.id.webview_original_user_agent_tag, originalUserAgent)
@@ -138,6 +139,7 @@ fun configureWebView(
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
                 view.evaluateJavascript(SpeechRecognitionBridge.POLYFILL_JS, null)
+                com.shubhampatel.drivelaunch.webaudio.WebAudioHub.ensureScript(view)
                 url?.let(callbacks.onUrlChange)
             }
 

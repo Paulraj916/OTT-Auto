@@ -23,6 +23,10 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.isVisible
 import com.shubhampatel.drivelaunch.R
 import com.shubhampatel.drivelaunch.databinding.ActivityMainBinding
+import com.shubhampatel.drivelaunch.webaudio.CtrlButton
+import com.shubhampatel.drivelaunch.webaudio.Kind
+import com.shubhampatel.drivelaunch.webaudio.NowPlayingView
+import com.shubhampatel.drivelaunch.webaudio.WebAudioHub
 
 /**
  * The premium shell around the browser: branded tile home, a big-target top bar
@@ -46,6 +50,19 @@ class OttChrome(
     private var wasHomeVisible = false
     private var barShown = false
     private var lastDesktop: Boolean? = null
+    private var nowPlaying: NowPlayingView? = null
+    private var nowPlayingManual = false
+    private lateinit var mini: LinearLayout
+    private lateinit var miniTitle: TextView
+    private lateinit var miniPlay: CtrlButton
+    private var miniShown = false
+    private val miniHeight get() = dp(72f).toInt()
+
+    /** True when this activity is running on the car's projected display. */
+    private val onCarDisplay: Boolean by lazy {
+        android.os.Build.VERSION.SDK_INT >= 30 &&
+            (activity as? android.app.Activity)?.display?.displayId?.let { it != android.view.Display.DEFAULT_DISPLAY } == true
+    }
 
     private fun dp(v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, activity.resources.displayMetrics)
 
@@ -67,6 +84,9 @@ class OttChrome(
         val root = binding.root as ViewGroup
         root.addView(bar, 0, CoordinatorLayout.LayoutParams(-1, barHeight).apply { gravity = Gravity.TOP })
         bar.visibility = View.GONE
+        mini = buildMini()
+        root.addView(mini, CoordinatorLayout.LayoutParams(-1, miniHeight).apply { gravity = Gravity.BOTTOM })
+        mini.visibility = View.GONE
         handler.post(tick)
     }
 
@@ -88,6 +108,56 @@ class OttChrome(
     }
 
     fun isMirrorShowing() = mirror != null
+
+    // ---------------------------------------------------------------- now playing (audio-only)
+    private fun buildMini(): LinearLayout {
+        val m = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(0xF2090C14.toInt())
+            elevation = dp(10f)
+            val p = dp(12f).toInt(); setPadding(p, dp(6f).toInt(), p, dp(6f).toInt())
+        }
+        val tv = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
+        miniTitle = TextView(activity).apply {
+            setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+        val hint = TextView(activity).apply {
+            setTextColor(0xFF8A93A6.toInt()); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            text = "🎧 Playing to car as audio  •  tap to open"
+        }
+        tv.addView(miniTitle); tv.addView(hint)
+        tv.setOnClickListener { nowPlayingManual = true }
+        m.addView(tv, LinearLayout.LayoutParams(0, -2, 1f))
+        val sz = dp(48f).toInt(); val g = dp(6f).toInt()
+        fun add(v: View) = m.addView(v, LinearLayout.LayoutParams(sz, sz).apply { setMargins(g, 0, g, 0) })
+        add(CtrlButton(activity, Kind.PREV, 48f) { WebAudioHub.command("prev") })
+        miniPlay = CtrlButton(activity, Kind.PLAY, 48f) {
+            WebAudioHub.command(if (WebAudioHub.state.playing) "pause" else "play")
+        }
+        add(miniPlay)
+        add(CtrlButton(activity, Kind.NEXT, 48f) { WebAudioHub.command("next") })
+        return m
+    }
+
+    private fun showNowPlaying(carMode: Boolean) {
+        if (nowPlaying != null) return
+        val v = NowPlayingView(activity, carMode) {
+            if (carMode) WebAudioHub.stop() else nowPlayingManual = false
+        }
+        nowPlaying = v
+        (binding.root as ViewGroup).addView(v, CoordinatorLayout.LayoutParams(-1, -1))
+        v.alpha = 0f
+        v.animate().alpha(1f).setDuration(240).start()
+    }
+
+    private fun hideNowPlaying() {
+        val v = nowPlaying ?: return
+        nowPlaying = null
+        v.animate().alpha(0f).setDuration(180).withEndAction { (v.parent as? ViewGroup)?.removeView(v) }.start()
+    }
 
     // ---------------------------------------------------------------- bar
     private fun circleBtn(iconRes: Int, desc: String, onClick: () -> Unit): ImageButton {
@@ -180,7 +250,27 @@ class OttChrome(
     private fun sync() {
         val homeVisible = binding.startPageRoot.isVisible
         val fullscreen = binding.fullscreenContainer.isVisible
-        val showBar = !homeVisible && !fullscreen && mirror == null
+        val np = WebAudioHub.state
+        if (!np.active) nowPlayingManual = false
+        // On the car display, video is never shown while web media plays: audio-only card instead.
+        val wantNowPlaying = np.active && (onCarDisplay || nowPlayingManual)
+        if (wantNowPlaying && nowPlaying == null) showNowPlaying(onCarDisplay)
+        if (!wantNowPlaying && nowPlaying != null) hideNowPlaying()
+        val showBar = !homeVisible && !fullscreen && mirror == null && !wantNowPlaying
+        val showMini = np.active && !onCarDisplay && !homeVisible && !fullscreen && mirror == null && !wantNowPlaying
+        miniTitle.text = np.title.ifBlank { np.site }
+        miniPlay.playing = np.playing
+        if (showMini != miniShown) {
+            miniShown = showMini
+            val lp = binding.contentRoot.layoutParams as CoordinatorLayout.LayoutParams
+            lp.bottomMargin = if (showMini) miniHeight else 0
+            binding.contentRoot.layoutParams = lp
+            if (showMini) {
+                mini.visibility = View.VISIBLE
+                mini.translationY = miniHeight.toFloat()
+                mini.animate().translationY(0f).setDuration(240).start()
+            } else mini.visibility = View.GONE
+        }
         if (homeVisible && !wasHomeVisible) home.playEntrance()
         wasHomeVisible = homeVisible
         binding.menuFab.alpha = if (homeVisible && mirror == null) 0f else 1f

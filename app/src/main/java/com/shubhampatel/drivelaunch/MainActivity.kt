@@ -247,7 +247,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         uiManager.exitFullscreen()
-        webView?.onPause()
+        // Keep the page alive while audio is playing so sound continues with the screen off / app in background.
+        if (!com.shubhampatel.drivelaunch.webaudio.WebAudioHub.state.playing) webView?.onPause()
         super.onPause()
     }
 

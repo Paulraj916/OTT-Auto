@@ -25,8 +25,8 @@ class UiPreviewTest {
         }
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         v.draw(Canvas(bmp))
-        File("/workspace/aa-ott/preview").mkdirs()
-        File("/workspace/aa-ott/preview/$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(System.getProperty("java.io.tmpdir") + "/ott-preview").mkdirs()
+        File(System.getProperty("java.io.tmpdir") + "/ott-preview/$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     @Test
@@ -52,5 +52,24 @@ class UiPreviewTest {
         binding.startPageRoot.visibility = View.VISIBLE
         looper.idleFor(java.time.Duration.ofSeconds(1))
         shot(root, "home_p", 1080, 1900); looper.idleFor(java.time.Duration.ofSeconds(1)); shot(root, "home_p", 1080, 1900)
+    }
+
+    @Test
+    fun nowPlaying() {
+        val base = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val ctx = android.view.ContextThemeWrapper(base, R.style.Theme_DriveLaunch)
+        com.shubhampatel.drivelaunch.webaudio.WebAudioHub.setState(
+            com.shubhampatel.drivelaunch.webaudio.WebAudioHub.State(
+                active = true, playing = true, title = "Kaavaalaa - Jailer | Official Lyric Video", artist = "Sun Pictures",
+                site = "m.youtube.com", positionMs = 83000, durationMs = 213000, updatedAt = System.currentTimeMillis()))
+        val v = com.shubhampatel.drivelaunch.webaudio.NowPlayingView(ctx, true) {}
+        v.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY))
+        v.layout(0, 0, 1920, 1000)
+        shot(v, "np_car", 1920, 1000)
+        shot(v, "np_phone", 1080, 1900)
+        com.shubhampatel.drivelaunch.webaudio.WebAudioHub.setState(
+            com.shubhampatel.drivelaunch.webaudio.WebAudioHub.State(active = true, playing = false, title = "Money Heist S05 E03", site = "netflix.com", positionMs = 600000, durationMs = 2700000))
+        v.refresh()
+        shot(v, "np_netflix", 1920, 1000)
     }
 }
