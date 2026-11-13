@@ -55,6 +55,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
@@ -110,6 +111,10 @@ dependencies {
     implementation(libs.google.material)
     implementation(libs.androidx.car.app)
     implementation(libs.zxing.core)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.newpipe.extractor)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.okhttp)
     implementation("com.github.woheller69:FreeDroidWarn:V1.+")
