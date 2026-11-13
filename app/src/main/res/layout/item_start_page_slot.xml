@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:paddingVertical="8dp"
+    android:background="?attr/selectableItemBackgroundBorderless">
+
+    <FrameLayout
+        android:id="@+id/iconContainer"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:elevation="4dp" />
+
+    <TextView
+        android:id="@+id/labelView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:maxWidth="88dp"
+        android:textAppearance="@style/TextAppearance.Material3.LabelMedium" />
+
+</LinearLayout>

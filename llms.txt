@@ -1,0 +1,26 @@
+# DriveLaunch
+
+> DriveLaunch is an open-source Android Auto browser built specifically for car head units. Unlike stock Android Auto, which blocks video playback in third-party apps, DriveLaunch plays video content directly through its WebView-based browser — intended for passengers or parked use, not while driving.
+
+Created by Shubham Patel. Licensed under GPLv3.
+
+## What it does
+
+- Provides a launcher-style start page with quick-access tiles to sites and services commonly used in a car (maps, music, video streaming) instead of requiring manual URL entry or bookmark navigation on a car display.
+- Plays fullscreen video on Android Auto head units, which the platform normally restricts for built-in streaming apps.
+- Supports multiple tabs, bookmarks, a custom home page, and a start page with user-selectable background images.
+- Uses a consistent glassmorphism (frosted-glass) UI design system across every screen.
+- Is fully responsive across phone, tablet, and car-display screen sizes and orientations.
+
+## Key facts
+
+- Platform: Android, minimum Android 7.0 (API 24), targets Android Auto car displays.
+- Language: Kotlin.
+- License: GNU General Public License v3.0 (GPLv3) — free and open source.
+- Package name: com.shubhampatel.drivelaunch.
+
+## Links
+
+- Source code: https://github.com/shubhampatel3355/DriveLaunch
+- Releases (signed APK downloads): https://github.com/shubhampatel3355/DriveLaunch/releases
+- README: https://github.com/shubhampatel3355/DriveLaunch/blob/main/README.md
